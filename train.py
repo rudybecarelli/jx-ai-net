@@ -2,33 +2,72 @@ from math import sqrt
 from math import floor
 from matplotlib import pyplot
 from pandas import read_csv
-from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import mean_squared_error
 from keras.models import Sequential
 from keras.layers import Dense
 from keras.layers import LSTM
+import argparse
+import ConfigParser
+import os
+import numpy as np
 
+# Parameter defaults
+name = 'default_jxai'
+file_root = '.'
+lstm_nodes = 50
+train_ratio = 0.5
+epochs = 50
+batch_size = 100
+crossvalidation = False
 
-# Parameters
-train_ratio = 0.2 # 0.2
-lstm_nodes = 50 # 50
-epochs = 100 # 100
-batch_size = 72 # 72
+# Load configuration file
+parser = argparse.ArgumentParser(description='Train the jx-ai net')
+parser.add_argument('conf_file_path', help='The path to the conf file')
+conf_file_path = parser.parse_args().conf_file_path
+
+# Override defaults if the configuration file exists
+if os.path.isfile(conf_file_path):
+    parameters = {}
+    config_parser = ConfigParser.ConfigParser()
+    config_parser.read(conf_file_path)
+    sections = config_parser.sections()
+    options = config_parser.options(sections[0])
+    for option in options:
+        parameters[option] = config_parser.get(sections[0], option)
+
+    # Override parameter defaults
+    if 'name' in parameters:
+        name = parameters['name']
+
+    if 'root' in parameters:
+        file_root = parameters['root']
+
+    if 'nodes' in parameters:
+        lstm_nodes = int(parameters['nodes'])
+
+    if 'split' in parameters:
+        train_ratio = float(parameters['split'])
+
+    if 'epochs' in parameters:
+        epochs = int(parameters['epochs'])
+
+    if 'batch' in parameters:
+        batch_size = int(parameters['batch'])
+
+    if 'crossvalid' in parameters:
+        if parameters['crossvalid'] == 'off':
+            crossvalidation = False
+        else:
+            crossvalidation = True
 
 # Load dataset
-x = read_csv('x.csv', header=None, index_col=False).values.astype('float32')
-y = read_csv('y4.csv', header=None, index_col=False).values.astype('float32')
-
-# Normalize features
-x_scaler = MinMaxScaler(feature_range=(0, 1))
-y_scaler = MinMaxScaler(feature_range=(0, 1))
-scaled_x = x_scaler.fit_transform(x)
-scaled_y = y_scaler.fit_transform(y)
+x = read_csv(os.path.join(file_root, 'x.csv'), header=None, index_col=False).values.astype('float32')
+y = read_csv(os.path.join(file_root, 'y.csv'), header=None, index_col=False).values.astype('float32')
 
 # Split into train and test sets
 train_length = int(floor(train_ratio * x.shape[0]))
-train_x, train_y = scaled_x[:train_length, :], scaled_y[:train_length, :]
-test_x, test_y = scaled_x[train_length:, :], scaled_y[train_length:, :]
+train_x, train_y = x[:train_length, :], y[:train_length, :]
+test_x, test_y = x[train_length:, :], y[train_length:, :]
 
 # Reshape input to be 3D [samples, timesteps, features]
 train_x = train_x.reshape((train_x.shape[0], 1, train_x.shape[1]))
@@ -45,32 +84,37 @@ history = model.fit(train_x, train_y, epochs=epochs, batch_size=batch_size, vali
                     shuffle=False)
 
 # Save the model
-model.save('model.h5')
+model.save(os.path.join(file_root, name + '.h5'))
 
 # Plot history
 pyplot.figure()
 pyplot.plot(history.history['loss'], label='train loss')
 pyplot.plot(history.history['val_loss'], label='validation loss')
 pyplot.legend()
-pyplot.show(block=False)
+pyplot.savefig(os.path.join(file_root, name + '_losses.png'))
 
 # Make a prediction
-yhat = model.predict(test_x)
+y_hat = model.predict(test_x)
+y_hat_1 = y_hat[None, -1]
+y_hat_last = model.predict(test_x[None, -1])
 
-# Denormalize features
-inv_yhat = y_scaler.inverse_transform(yhat)
-inv_y = y_scaler.inverse_transform(test_y)
+# Compute the validation set RMSE
+rmse = sqrt(mean_squared_error(test_y, y_hat))
 
-# Calculate RMSE
-rmse = sqrt(mean_squared_error(inv_y, inv_yhat))
-print('Test RMSE: %.3f' % rmse)
+# Write tuning information to the log file
+with open(os.path.join(file_root, name + '.log'), "w") as log_file:
+    log_file.write(str(rmse) + '\n')
 
-# plot y-yhat
+    last_x_predict = np.array2string(y_hat_last, precision=16, separator=',').replace('[', '').replace(']', '').replace(' ', '')
+    log_file.write(last_x_predict)
+
+# Plot y-yhat
 pyplot.figure()
 pyplot.subplot(211)
 pyplot.title('y')
-pyplot.plot(inv_y)
+pyplot.plot(test_y)
 pyplot.subplot(212)
-pyplot.title('yhat')
-pyplot.plot(inv_yhat)
-pyplot.show()
+pyplot.title('y_hat')
+pyplot.plot(y_hat)
+pyplot.tight_layout()
+pyplot.savefig(os.path.join(file_root, name + '_y_yhat.png'))
