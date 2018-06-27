@@ -1,0 +1,42 @@
+Connessione a Harlock:
+
+ssh -X rudy@harlock
+
+---
+
+Per usare il virtualenv e la GPU:
+
+source ~/virtualenvs/keras/bin/activate
+export LD_LIBRARY_PATH=${LD_LIBRARY_PATH:+${LD_LIBRARY_PATH}:}/usr/local/cuda/cudnn_5.1.5/lib64
+export CUDA_VISIBLE_DEVICES=0,1
+deactivate
+
+---
+
+Configurazione per usare la GPU (da fare solo una volta):
+
+pip install keras==2.0.0
+pip install tensorflow-gpu==1.2.1
+
+---
+
+Per visualizzare le immagini si può usare feh:
+
+feh <path_to_image>
+
+---
+
+Per visualizzare l'attività della GPU:
+
+watch nvidia-smi
+
+---
+
+Per terminare tutte le sessioni di rudy su harlock
+
+pkill -9 -u rudy
+
+---
+
+Ho modificato .bashrc per settare le variabili d'ambiente, attivare il virtualenv keras e passare
+all directory ~/git

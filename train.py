@@ -19,6 +19,9 @@ train_ratio = 0.5
 epochs = 50
 batch_size = 100
 crossvalidation = False
+training_verbosity = 0
+log_to_file = True
+log_to_std_out = True
 
 # Load configuration file
 parser = argparse.ArgumentParser(description='Train the jx-ai net')
@@ -54,11 +57,26 @@ if os.path.isfile(conf_file_path):
     if 'batch' in parameters:
         batch_size = int(parameters['batch'])
 
+    if 'training_verbosity' in parameters:
+        training_verbosity = int(parameters['training_verbosity'])
+
     if 'crossvalid' in parameters:
         if parameters['crossvalid'] == 'off':
             crossvalidation = False
         else:
             crossvalidation = True
+
+    if 'log_to_file' in parameters:
+        if parameters['log_to_file'] == 'off':
+            log_to_file = False
+        else:
+            log_to_file = True
+
+    if 'log_to_std_out' in parameters:
+        if parameters['log_to_std_out'] == 'off':
+            log_to_std_out = False
+        else:
+            log_to_std_out = True
 
 # Load dataset
 x = read_csv(os.path.join(file_root, 'x.csv'), header=None, index_col=False).values.astype('float32')
@@ -80,41 +98,50 @@ model.add(Dense(train_y.shape[1]))
 model.compile(loss='mae', optimizer='adam')
 
 # Fit network
-history = model.fit(train_x, train_y, epochs=epochs, batch_size=batch_size, validation_data=(test_x, test_y), verbose=2,
+history = model.fit(train_x, train_y, epochs=epochs, batch_size=batch_size, validation_data=(test_x, test_y), verbose=training_verbosity,
                     shuffle=False)
 
 # Save the model
 model.save(os.path.join(file_root, name + '.h5'))
 
-# Plot history
-pyplot.figure()
-pyplot.plot(history.history['loss'], label='train loss')
-pyplot.plot(history.history['val_loss'], label='validation loss')
-pyplot.legend()
-pyplot.savefig(os.path.join(file_root, name + '_losses.png'))
-
-# Make a prediction
+# Make a prediction on the whole y and on the last sample
 y_hat = model.predict(test_x)
 y_hat_1 = y_hat[None, -1]
 y_hat_last = model.predict(test_x[None, -1])
 
-# Compute the validation set RMSE
+# Compute the validation set RMSE and last sample predict
 rmse = sqrt(mean_squared_error(test_y, y_hat))
+last_x_predict = np.array2string(y_hat_last, precision=16, separator=',').replace('[', '').replace(']', '').replace(' ', '')
 
-# Write tuning information to the log file
-with open(os.path.join(file_root, name + '.log'), "w") as log_file:
-    log_file.write(str(rmse) + '\n')
+# Log to std_out
+if log_to_std_out:
 
-    last_x_predict = np.array2string(y_hat_last, precision=16, separator=',').replace('[', '').replace(']', '').replace(' ', '')
-    log_file.write(last_x_predict)
+    # Write tuning information
+    print(str(rmse))
+    print(last_x_predict)
 
-# Plot y-yhat
-pyplot.figure()
-pyplot.subplot(211)
-pyplot.title('y')
-pyplot.plot(test_y)
-pyplot.subplot(212)
-pyplot.title('y_hat')
-pyplot.plot(y_hat)
-pyplot.tight_layout()
-pyplot.savefig(os.path.join(file_root, name + '_y_yhat.png'))
+# Log to file
+if log_to_file:
+
+    # Plot history
+    pyplot.figure()
+    pyplot.plot(history.history['loss'], label='train loss')
+    pyplot.plot(history.history['val_loss'], label='validation loss')
+    pyplot.legend()
+    pyplot.savefig(os.path.join(file_root, name + '_losses.png'))
+
+    # Write tuning information
+    with open(os.path.join(file_root, name + '.log'), "w") as log_file:
+        log_file.write(str(rmse) + '\n')
+        log_file.write(last_x_predict)
+
+    # Plot y-yhat
+    pyplot.figure()
+    pyplot.subplot(211)
+    pyplot.title('y')
+    pyplot.plot(test_y)
+    pyplot.subplot(212)
+    pyplot.title('y_hat')
+    pyplot.plot(y_hat)
+    pyplot.tight_layout()
+    pyplot.savefig(os.path.join(file_root, name + '_y_yhat.png'))
