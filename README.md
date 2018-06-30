@@ -5,12 +5,12 @@
 Se eseguito procede all'addestramento di una rete utilizzando due file: `x.csv` e `y.csv`.
 
 La locazione dei file `x.csv` e `y.csv` e altri parametri di controllo sono scritti in un file di configurazione (e.g. `./myjxai.conf`) che deve essere passato come unico parametro a `train.py`.  
-Nel file di configurazione è anche possibile scegliere se effettuare un log su file e/o su standard output.  
+Nel file di configurazione è anche possibile scegliere se effettuare un log su file e/o online  
 Nel file presente nella root del progetto sono riportati i **valori di default**.
 
 Il lancio dello script pertanto avviene così:
 
-`python train.py ./myjxai.conf`
+`python train.py ./myjxai.conf &`
 
 L'esecuzione dello script porta alla produczione di un file di modello e.g.: `./myjxai.h5`.
 
@@ -21,7 +21,7 @@ Se eseguito procede alla classificazione di una rete utilizzando `x.csv` e produ
 Lo script prevede in ingresso lo stesso file di configurazione delle script precedente.  
 Il lancio dello script pertanto avviene così:
 
-`python predict.py ./myjxai.conf`
+`python predict.py ./myjxai.conf &`
 
 Per il test sono presenti due file x e y in `./test_data`.  
 

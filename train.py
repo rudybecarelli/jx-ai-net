@@ -1,6 +1,7 @@
 from math import floor
 from matplotlib import pyplot
 from pandas import read_csv
+import keras.callbacks as callbacks
 from keras.models import Sequential
 from keras.layers import Dense
 from keras.layers import LSTM
@@ -19,7 +20,7 @@ defaults = {
     'crossvalid': False,
     'training_verbosity': 0,
     'log_to_file': True,
-    'log_to_std_out': True
+    'online_plot': True
 }
 
 # Load configuration file
@@ -42,7 +43,40 @@ batch_size = config_parser.getint(base_section, 'batch')
 crossvalidation = config_parser.getboolean(base_section, 'crossvalid')
 training_verbosity = config_parser.getint(base_section, 'training_verbosity')
 log_to_file = config_parser.getboolean(base_section, 'log_to_file')
-log_to_std_out = config_parser.getboolean(base_section, 'log_to_std_out')
+online_plot = config_parser.getboolean(base_section, 'online_plot')
+
+# Plotting class
+class Plotter(callbacks.Callback):
+    def on_train_begin(self, logs={}):
+        self.loss = []
+        self.val_loss = []
+        self.acc = []
+        self.val_acc = []
+
+    def on_epoch_end(self, epoch, logs={}):
+        self.loss.append(logs.get('loss'))
+        self.val_loss.append(logs.get('val_loss'))
+        self.acc.append(logs.get('acc'))
+        self.val_acc.append(logs.get('val_acc'))
+
+        if online_plot:
+            self.plot_curves()
+
+    def plot_curves(self):
+        pyplot.clf()
+        pyplot.plot(self.loss, label="loss")
+        pyplot.plot(self.val_loss, label="val_loss")
+        pyplot.plot(self.acc, label="acc")
+        pyplot.plot(self.val_acc, label="val_acc")
+        pyplot.legend()
+        text_log = 'loss: %.4f  val_loss: %.4f  acc: %.4f  val_acc: %.4f' % \
+                   (self.loss[-1], self.val_loss[-1], self.acc[-1], self.val_acc[-1])
+        pyplot.xlabel(text_log)
+        pyplot.show(block=False)
+        pyplot.pause(0.01)
+
+# Create the plotter
+plotter = Plotter()
 
 # Load dataset
 x = read_csv(os.path.join(file_root, 'x.csv'), header=None, index_col=False).values.astype('float32')
@@ -65,19 +99,15 @@ model.compile(loss='mae', optimizer='adam', metrics=['accuracy'])
 
 # Fit network
 history = model.fit(train_x, train_y, epochs=epochs, batch_size=batch_size, validation_data=(test_x, test_y), verbose=training_verbosity,
-                    shuffle=False)
+                    shuffle=False, callbacks=[plotter])
 
 # Save the model
 model.save(os.path.join(file_root, name + '.h5'))
 
-# Log to file
 if log_to_file:
-
-    # Plot history
-    pyplot.figure()
-    pyplot.plot(history.history['loss'], label='train loss')
-    pyplot.plot(history.history['val_loss'], label='validation loss')
-    pyplot.plot(history.history['acc'], label="accuracy")
-    pyplot.plot(history.history['val_acc'], label="validation accuracy")
-    pyplot.legend()
+    plotter.plot_curves()
     pyplot.savefig(os.path.join(file_root, name + '_logs.png'))
+
+if online_plot:
+    pyplot.ioff()
+    pyplot.show()
