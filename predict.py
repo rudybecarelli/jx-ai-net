@@ -1,12 +1,10 @@
-from math import floor
 from matplotlib import pyplot
 from pandas import read_csv
-from keras.models import Sequential
-from keras.layers import Dense
-from keras.layers import LSTM
 import argparse
 import ConfigParser
 import os
+import numpy as np
+from keras.models import load_model
 
 # Parameter defaults
 defaults = {
@@ -48,36 +46,31 @@ log_to_std_out = config_parser.getboolean(base_section, 'log_to_std_out')
 x = read_csv(os.path.join(file_root, 'x.csv'), header=None, index_col=False).values.astype('float32')
 y = read_csv(os.path.join(file_root, 'y.csv'), header=None, index_col=False).values.astype('float32')
 
-# Split into train and test sets
-train_length = int(floor(train_ratio * x.shape[0]))
-train_x, train_y = x[:train_length, :], y[:train_length, :]
-test_x, test_y = x[train_length:, :], y[train_length:, :]
+# Rename the variables for the test
+test_x, test_y = x, y
 
 # Reshape input to be 3D [samples, timesteps, features]
-train_x = train_x.reshape((train_x.shape[0], 1, train_x.shape[1]))
 test_x = test_x.reshape((test_x.shape[0], 1, test_x.shape[1]))
 
-# Design network
-model = Sequential()
-model.add(LSTM(lstm_nodes, input_shape=(train_x.shape[1], train_x.shape[2])))
-model.add(Dense(train_y.shape[1]))
-model.compile(loss='mae', optimizer='adam', metrics=['accuracy'])
-
-# Fit network
-history = model.fit(train_x, train_y, epochs=epochs, batch_size=batch_size, validation_data=(test_x, test_y), verbose=training_verbosity,
-                    shuffle=False)
-
 # Save the model
-model.save(os.path.join(file_root, name + '.h5'))
+model = load_model(os.path.join(file_root, name + '.h5'))
+
+# Make a prediction on the whole y
+y_hat = model.predict(test_x)
+
+# Save y_hat
+np.savetxt(os.path.join(file_root, 'y_hat.csv'), y_hat, delimiter=",")
 
 # Log to file
 if log_to_file:
 
-    # Plot history
+    # Plot y-yhat
     pyplot.figure()
-    pyplot.plot(history.history['loss'], label='train loss')
-    pyplot.plot(history.history['val_loss'], label='validation loss')
-    pyplot.plot(history.history['acc'], label="accuracy")
-    pyplot.plot(history.history['val_acc'], label="validation accuracy")
-    pyplot.legend()
-    pyplot.savefig(os.path.join(file_root, name + '_logs.png'))
+    pyplot.subplot(211)
+    pyplot.title('y')
+    pyplot.plot(test_y)
+    pyplot.subplot(212)
+    pyplot.title('y_hat')
+    pyplot.plot(y_hat)
+    pyplot.tight_layout()
+    pyplot.savefig(os.path.join(file_root, name + '_y_yhat.png'))

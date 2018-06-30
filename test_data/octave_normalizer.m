@@ -10,6 +10,6 @@ a = y_in - min(y_in);
 
 y = a ./ max(a);
 
-csvwrite('x.csv', x);
+csvwrite('x.csv', x(1:900, :));
 
-csvwrite('y.csv', y);
+csvwrite('y.csv', y(1:900, :));
