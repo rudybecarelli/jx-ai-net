@@ -23,6 +23,8 @@ Il lancio dello script pertanto avviene così:
 
 `python predict.py ./myjxai.conf &`
 
+### Test folder
+
 Per il test sono presenti due file x e y in `./test_data`.  
 
 - Il file `x.csv` rappresenta il vettore delle variabili in ingresso e contiene 900 samples di 8 variabili reali.

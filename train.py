@@ -1,5 +1,5 @@
+import matplotlib
 from math import floor
-from matplotlib import pyplot
 from pandas import read_csv
 import keras.callbacks as callbacks
 from keras.models import Sequential
@@ -9,18 +9,19 @@ import argparse
 import ConfigParser
 import os
 
+
 # Parameter defaults
 defaults = {
     'name': 'default_jxai',
     'root': '.',
-    'nodes': 50,
-    'split': 0.5,
-    'epochs': 50,
-    'batch': 100,
+    'nodes': 100,
+    'split': 0.8,
+    'epochs': 300,
+    'batch': 20,
     'crossvalid': False,
-    'training_verbosity': 0,
-    'log_to_file': True,
-    'online_plot': True
+    'verbosity': 0,
+    'log_to_file': False,
+    'online_plot': False
 }
 
 # Load configuration file
@@ -41,9 +42,14 @@ train_ratio = config_parser.getfloat(base_section, 'split')
 epochs = config_parser.getint(base_section, 'epochs')
 batch_size = config_parser.getint(base_section, 'batch')
 crossvalidation = config_parser.getboolean(base_section, 'crossvalid')
-training_verbosity = config_parser.getint(base_section, 'training_verbosity')
+verbosity = config_parser.getint(base_section, 'verbosity')
 log_to_file = config_parser.getboolean(base_section, 'log_to_file')
 online_plot = config_parser.getboolean(base_section, 'online_plot')
+
+if not online_plot:
+    matplotlib.use('Agg')
+
+from matplotlib import pyplot
 
 # Plotting class
 class Plotter(callbacks.Callback):
@@ -98,7 +104,7 @@ model.add(Dense(train_y.shape[1]))
 model.compile(loss='mae', optimizer='adam', metrics=['accuracy'])
 
 # Fit network
-history = model.fit(train_x, train_y, epochs=epochs, batch_size=batch_size, validation_data=(test_x, test_y), verbose=training_verbosity,
+history = model.fit(train_x, train_y, epochs=epochs, batch_size=batch_size, validation_data=(test_x, test_y), verbose=verbosity,
                     shuffle=False, callbacks=[plotter])
 
 # Save the model

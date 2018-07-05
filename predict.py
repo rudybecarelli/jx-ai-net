@@ -10,7 +10,7 @@ from keras.models import load_model
 defaults = {
     'name': 'default_jxai',
     'root': '.',
-    'log_to_file': True
+    'log_to_file': False
 }
 
 # Load configuration file
