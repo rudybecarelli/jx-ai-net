@@ -9,7 +9,7 @@ from keras.models import load_model
 defaults = {
     'name': 'default_jxai',
     'root': '.',
-    'create_graph': False
+    'create_graph': 'False'
 }
 
 # Load configuration file

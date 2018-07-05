@@ -12,13 +12,13 @@ import os
 defaults = {
     'name': 'default_jxai',
     'root': '.',
-    'nodes': 100,
-    'split': 0.8,
-    'epochs': 300,
-    'batch': 20,
-    'crossvalid': False,
-    'verbosity': 0,
-    'create_graph': False
+    'nodes': '100',
+    'split': '0.8',
+    'epochs': '300',
+    'batch': '20',
+    'crossvalid': 'False',
+    'verbosity': '0',
+    'create_graph': 'False'
 }
 
 # Load configuration file
