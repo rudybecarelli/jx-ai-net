@@ -5,7 +5,7 @@
 Se eseguito procede all'addestramento di una rete utilizzando due file: `x.csv` e `y.csv`.
 
 La locazione dei file `x.csv` e `y.csv` e altri parametri di controllo sono scritti in un file di configurazione (e.g. `./myjxai.conf`) che deve essere passato come unico parametro a `train.py`.  
-Nel file di configurazione è anche possibile scegliere se effettuare un log su file e/o online  
+Nel file di configurazione è anche possibile scegliere se effettuare un log su file.  
 Nel file presente nella root del progetto sono riportati i **valori di default**.
 
 Il lancio dello script pertanto avviene così:

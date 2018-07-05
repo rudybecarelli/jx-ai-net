@@ -1,7 +1,5 @@
-import matplotlib
 from math import floor
 from pandas import read_csv
-import keras.callbacks as callbacks
 from keras.models import Sequential
 from keras.layers import Dense
 from keras.layers import LSTM
@@ -14,14 +12,13 @@ import os
 defaults = {
     'name': 'default_jxai',
     'root': '.',
-    'nodes': 100,
-    'split': 0.8,
-    'epochs': 300,
-    'batch': 20,
-    'crossvalid': False,
-    'verbosity': 0,
-    'log_to_file': False,
-    'online_plot': False
+    'nodes': '100',
+    'split': '0.8',
+    'epochs': '300',
+    'batch': '20',
+    'crossvalid': 'False',
+    'verbosity': '0',
+    'create_graph': 'False'
 }
 
 # Load configuration file
@@ -43,46 +40,7 @@ epochs = config_parser.getint(base_section, 'epochs')
 batch_size = config_parser.getint(base_section, 'batch')
 crossvalidation = config_parser.getboolean(base_section, 'crossvalid')
 verbosity = config_parser.getint(base_section, 'verbosity')
-log_to_file = config_parser.getboolean(base_section, 'log_to_file')
-online_plot = config_parser.getboolean(base_section, 'online_plot')
-
-if not online_plot:
-    matplotlib.use('Agg')
-
-from matplotlib import pyplot
-
-# Plotting class
-class Plotter(callbacks.Callback):
-    def on_train_begin(self, logs={}):
-        self.loss = []
-        self.val_loss = []
-        self.acc = []
-        self.val_acc = []
-
-    def on_epoch_end(self, epoch, logs={}):
-        self.loss.append(logs.get('loss'))
-        self.val_loss.append(logs.get('val_loss'))
-        self.acc.append(logs.get('acc'))
-        self.val_acc.append(logs.get('val_acc'))
-
-        if online_plot:
-            self.plot_curves()
-
-    def plot_curves(self):
-        pyplot.clf()
-        pyplot.plot(self.loss, label="loss")
-        pyplot.plot(self.val_loss, label="val_loss")
-        pyplot.plot(self.acc, label="acc")
-        pyplot.plot(self.val_acc, label="val_acc")
-        pyplot.legend()
-        text_log = 'loss: %.4f  val_loss: %.4f  acc: %.4f  val_acc: %.4f' % \
-                   (self.loss[-1], self.val_loss[-1], self.acc[-1], self.val_acc[-1])
-        pyplot.xlabel(text_log)
-        pyplot.show(block=False)
-        pyplot.pause(0.01)
-
-# Create the plotter
-plotter = Plotter()
+create_graph = config_parser.getboolean(base_section, 'create_graph')
 
 # Load dataset
 x = read_csv(os.path.join(file_root, 'x.csv'), header=None, index_col=False).values.astype('float32')
@@ -105,15 +63,28 @@ model.compile(loss='mae', optimizer='adam', metrics=['accuracy'])
 
 # Fit network
 history = model.fit(train_x, train_y, epochs=epochs, batch_size=batch_size, validation_data=(test_x, test_y), verbose=verbosity,
-                    shuffle=False, callbacks=[plotter])
+                    shuffle=False)
 
 # Save the model
 model.save(os.path.join(file_root, name + '.h5'))
 
-if log_to_file:
-    plotter.plot_curves()
-    pyplot.savefig(os.path.join(file_root, name + '_logs.png'))
+if create_graph:
+    import matplotlib
+    matplotlib.use('Agg')
+    from matplotlib import pyplot
 
-if online_plot:
-    pyplot.ioff()
-    pyplot.show()
+    loss = history.history["loss"]
+    val_loss = history.history["val_loss"]
+    acc = history.history["acc"]
+    val_acc = history.history["val_acc"]
+
+    pyplot.figure()
+    pyplot.plot(loss, label="loss")
+    pyplot.plot(val_loss, label="val_loss")
+    pyplot.plot(acc, label="acc")
+    pyplot.plot(val_acc, label="val_acc")
+    pyplot.legend()
+    text_log = 'loss: %.4f  val_loss: %.4f  acc: %.4f  val_acc: %.4f' % \
+               (loss[-1], val_loss[-1], acc[-1], val_acc[-1])
+    pyplot.xlabel(text_log)
+    pyplot.savefig(os.path.join(file_root, name + '_graphs.png'))
