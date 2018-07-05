@@ -42,11 +42,6 @@ crossvalidation = config_parser.getboolean(base_section, 'crossvalid')
 verbosity = config_parser.getint(base_section, 'verbosity')
 create_graph = config_parser.getboolean(base_section, 'create_graph')
 
-if create_graph:
-    import matplotlib
-    matplotlib.use('Agg')
-    from matplotlib import pyplot
-
 # Load dataset
 x = read_csv(os.path.join(file_root, 'x.csv'), header=None, index_col=False).values.astype('float32')
 y = read_csv(os.path.join(file_root, 'y.csv'), header=None, index_col=False).values.astype('float32')
@@ -74,6 +69,10 @@ history = model.fit(train_x, train_y, epochs=epochs, batch_size=batch_size, vali
 model.save(os.path.join(file_root, name + '.h5'))
 
 if create_graph:
+    import matplotlib
+    matplotlib.use('Agg')
+    from matplotlib import pyplot
+
     loss = history.history["loss"]
     val_loss = history.history["val_loss"]
     acc = history.history["acc"]
@@ -88,4 +87,4 @@ if create_graph:
     text_log = 'loss: %.4f  val_loss: %.4f  acc: %.4f  val_acc: %.4f' % \
                (loss[-1], val_loss[-1], acc[-1], val_acc[-1])
     pyplot.xlabel(text_log)
-    pyplot.savefig(os.path.join(file_root, name + '_logs.png'))
+    pyplot.savefig(os.path.join(file_root, name + '_graphs.png'))
