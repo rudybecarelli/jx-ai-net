@@ -1,4 +1,3 @@
-from matplotlib import pyplot
 from pandas import read_csv
 import argparse
 import ConfigParser
@@ -10,7 +9,7 @@ from keras.models import load_model
 defaults = {
     'name': 'default_jxai',
     'root': '.',
-    'log_to_file': False
+    'create_graph': False
 }
 
 # Load configuration file
@@ -26,7 +25,12 @@ base_section = config_parser.sections()[0]
 
 name = config_parser.get(base_section, 'name')
 file_root = config_parser.get(base_section, 'root')
-log_to_file = config_parser.getboolean(base_section, 'log_to_file')
+create_graph = config_parser.getboolean(base_section, 'create_graph')
+
+if create_graph:
+    import matplotlib
+    matplotlib.use('Agg')
+    from matplotlib import pyplot
 
 # Load dataset
 x = read_csv(os.path.join(file_root, 'x.csv'), header=None, index_col=False).values.astype('float32')
@@ -45,7 +49,7 @@ y_hat = model.predict(x)
 np.savetxt(os.path.join(file_root, 'y_hat.csv'), y_hat, delimiter=",")
 
 # Log to file
-if log_to_file:
+if create_graph:
 
     # Plot y-yhat
     pyplot.figure()
