@@ -2,6 +2,7 @@ from math import floor
 from pandas import read_csv
 from keras.models import Sequential
 from keras.layers import Dense
+from keras.layers import Dropout
 from keras.layers import LSTM
 import argparse
 import ConfigParser
@@ -16,6 +17,7 @@ defaults = {
     'split': '0.8',
     'epochs': '300',
     'batch': '20',
+    'dropout': '0.2',
     'crossvalid': 'False',
     'verbosity': '0',
     'create_graph': 'False'
@@ -38,6 +40,7 @@ lstm_nodes = config_parser.getint(base_section, 'nodes')
 train_ratio = config_parser.getfloat(base_section, 'split')
 epochs = config_parser.getint(base_section, 'epochs')
 batch_size = config_parser.getint(base_section, 'batch')
+dropout = config_parser.getfloat(base_section, 'dropout')
 crossvalidation = config_parser.getboolean(base_section, 'crossvalid')
 verbosity = config_parser.getint(base_section, 'verbosity')
 create_graph = config_parser.getboolean(base_section, 'create_graph')
@@ -58,6 +61,10 @@ test_x = test_x.reshape((test_x.shape[0], 1, test_x.shape[1]))
 # Design network
 model = Sequential()
 model.add(LSTM(lstm_nodes, input_shape=(train_x.shape[1], train_x.shape[2])))
+model.add(Dropout(dropout))
+model.add(Dense(lstm_nodes, activation='relu'))
+model.add(Dropout(dropout))
+model.add(Dense(lstm_nodes, activation='relu'))
 model.add(Dense(train_y.shape[1]))
 model.compile(loss='mae', optimizer='adam', metrics=['accuracy'])
 
