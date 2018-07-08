@@ -28,8 +28,8 @@ file_root = config_parser.get(base_section, 'root')
 create_graph = config_parser.getboolean(base_section, 'create_graph')
 
 # Load dataset
-x = read_csv(os.path.join(file_root, 'x.csv'), header=None, index_col=False).values.astype('float32')
-y = read_csv(os.path.join(file_root, 'y.csv'), header=None, index_col=False).values.astype('float32')
+x = read_csv(os.path.join(file_root, 'x_test.csv'), header=None, index_col=False).values.astype('float32')
+y = read_csv(os.path.join(file_root, 'y_test.csv'), header=None, index_col=False).values.astype('float32')
 
 # Reshape input to be 3D [samples, timesteps, features]
 x = x.reshape((x.shape[0], 1, x.shape[1]))

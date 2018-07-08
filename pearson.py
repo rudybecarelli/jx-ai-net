@@ -14,13 +14,13 @@ training_data_folder = parser.parse_args().training_data_folder
 
 
 # Load x
-x = read_csv(os.path.join(training_data_folder, 'x.csv'), header=None, index_col=False).values.astype('float32')
+x = read_csv(os.path.join(training_data_folder, 'x_train.csv'), header=None, index_col=False).values.astype('float32')
 
 # Compute the Pearson's matrix
 cm = np.absolute(np.corrcoef(x.transpose()))
 
-np.savetxt("pearson.csv", cm, delimiter=",", fmt='%.2f')
+np.savetxt(os.path.join(training_data_folder, 'pearson.csv'), cm, delimiter=",", fmt='%.2f')
 
 seaborn.heatmap(cm, square=True)
 
-pyplot.savefig('pearson.png')
+pyplot.savefig(os.path.join(training_data_folder, 'pearson.png'))

@@ -43,8 +43,8 @@ verbosity = config_parser.getint(base_section, 'verbosity')
 create_graph = config_parser.getboolean(base_section, 'create_graph')
 
 # Load dataset
-x = read_csv(os.path.join(file_root, 'x.csv'), header=None, index_col=False).values.astype('float32')
-y = read_csv(os.path.join(file_root, 'y.csv'), header=None, index_col=False).values.astype('float32')
+x = read_csv(os.path.join(file_root, 'x_train.csv'), header=None, index_col=False).values.astype('float32')
+y = read_csv(os.path.join(file_root, 'y_train.csv'), header=None, index_col=False).values.astype('float32')
 
 # Split into train and test sets
 train_length = int(floor(train_ratio * x.shape[0]))
