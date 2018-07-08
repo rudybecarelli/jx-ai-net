@@ -23,18 +23,22 @@ for key in keys:
     label_encoder = LabelEncoder()
     integer_encoded = label_encoder.fit_transform(x_column)
 
-    # binary encode
-    onehot_encoder = OneHotEncoder(sparse=False)
-    integer_encoded = integer_encoded.reshape(len(integer_encoded), 1)
-    onehot_encoded = onehot_encoder.fit_transform(integer_encoded)
+    normalized_encoded = integer_encoded - np.min(integer_encoded)
 
-    if key == 0:
-        x_local = onehot_encoded
+    a = np.max(integer_encoded)
+
+    normalized_encoded = np.true_divide(normalized_encoded, np.max(integer_encoded))
+
+    if x_local is None:
+        x_local = np.expand_dims(normalized_encoded, 1)
     else:
-        x_local = np.hstack((x_local, onehot_encoded))
+        x_local = np.hstack((x_local, np.expand_dims(normalized_encoded, 1)))
 
-    if key == 4:
-        y_local = onehot_encoded
+    if key in (6,7,8):
+        if y_local is None:
+            y_local = np.expand_dims(normalized_encoded, 1)
+        else:
+            y_local = np.hstack((y_local, np.expand_dims(normalized_encoded, 1)))
 
 x = np.delete(x_local, -1, axis=0).astype(np.int32)
 
