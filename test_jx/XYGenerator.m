@@ -1,12 +1,12 @@
 x_cols = 1:9;
 
-y_cols = 1:9;
+y_cols = 9;
 
 train_ratio = 0.8;
 
 %
 
-x_default = csvread('x_default.csv');
+x_default = csvread('x_tommy.csv');
 
 x = x_default(1:end-1, x_cols);
 
