@@ -42,13 +42,14 @@ y_hat = model.predict(x)
 
 print('')
 
+# Hardmax the softmax variable
 def to_hardmax(x):
 
-    one_position = np.argmax(x);
+    one_position = np.argmax(x)
 
     x_hardmax = np.zeros(x.shape, dtype=np.int32)
 
-    x_hardmax[one_position] = 1;
+    x_hardmax[one_position] = 1
 
     return x_hardmax
 

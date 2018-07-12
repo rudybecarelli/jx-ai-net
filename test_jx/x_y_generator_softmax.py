@@ -8,7 +8,7 @@ train_ratio = 0.8
 
 #
 
-x_tommy_denorm = pd.read_csv('x_tommy_denorm.csv', header=None);
+x_tommy_denorm = pd.read_csv('x_tommy_denorm.csv', header=None)
 keys = x_tommy_denorm.keys()
 
 x_local = None
@@ -40,7 +40,7 @@ x = np.delete(x_local, -1, axis=0).astype(np.int32)
 
 y = np.delete(y_local, 0, axis=0).astype(np.int32)
 
-train_limit = int(math.floor(x.shape[0] * train_ratio));
+train_limit = int(math.floor(x.shape[0] * train_ratio))
 
 x_train = x[:train_limit]
 
