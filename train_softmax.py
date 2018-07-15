@@ -60,13 +60,9 @@ test_x = test_x.reshape((test_x.shape[0], 1, test_x.shape[1]))
 # Design network
 model = Sequential()
 model.add(LSTM(lstm_nodes, input_shape=(train_x.shape[1], train_x.shape[2])))
-'''
-model.add(Dropout(dropout))
-model.add(Dense(lstm_nodes, activation='relu'))
-model.add(Dropout(dropout))
-model.add(Dense(lstm_nodes, activation='relu'))
-model.add(Dense(train_y.shape[1]))
-'''
+#model.add(Dropout(dropout))
+#model.add(Dense(10 * lstm_nodes))
+#model.add(Dropout(dropout))
 model.add(Dense(train_y.shape[1], activation='softmax'))
 model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
 
@@ -98,4 +94,5 @@ if create_graph:
     text_log = 'loss: %.4f  val_loss: %.4f  acc: %.4f  val_acc: %.4f' % \
                (loss[-1], val_loss[-1], acc[-1], val_acc[-1])
     pyplot.xlabel(text_log)
+    pyplot.ylim((0, 1))
     pyplot.savefig(os.path.join(file_root, name + '_graphs.png'))
