@@ -6,6 +6,8 @@ from sklearn.preprocessing import LabelEncoder, OneHotEncoder, MinMaxScaler
 
 train_ratio = 0.8
 
+sequence_depth = 6
+
 # Read the original file
 
 x_denorm = pd.read_csv('x_tommy_denorm.csv', header=None)
@@ -30,7 +32,7 @@ for key in x_denorm.keys():
 
         x_scaled[key] = MinMaxScaler().fit_transform(x_encoded_column.astype(np.float64))
 
-        if key == 4:
+        if key == 3:
 
             # Onehot encoding
 
@@ -48,19 +50,19 @@ for id in ids:
 
     sequence = x_scaled[x_scaled[0] == id]
 
-    if len(sequence.index) > 2:
+    if len(sequence.index) >= sequence_depth + 1:
 
         sequence = sequence.drop([0], axis=1)
 
         sequence_indexes = sequence.index.values
 
-        for row_index in np.arange(0, len(sequence_indexes) - 2):
+        for row_index in np.arange(0, len(sequence_indexes) - sequence_depth):
 
-            x_slice = np.zeros((1, 2, len(sequence.columns)))
+            x_slice = np.zeros((1, sequence_depth, len(sequence.columns)))
 
-            x_slice[0, 0, :] = sequence.iloc[row_index].values
+            for i in np.arange(0, sequence_depth):
 
-            x_slice[0, 1, :] = sequence.iloc[row_index + 1].values
+                x_slice[0, i, :] = sequence.iloc[row_index + i].values
 
             if x is None:
 
@@ -72,7 +74,7 @@ for id in ids:
 
             y_slice = np.zeros((1, y_onehot.shape[1]))
 
-            y_slice[0, :] = y_onehot[sequence_indexes[row_index + 2]]
+            y_slice[0, :] = y_onehot[sequence_indexes[row_index + sequence_depth]]
 
             if y is None:
 
