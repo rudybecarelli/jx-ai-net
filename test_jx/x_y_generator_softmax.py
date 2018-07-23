@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 from sklearn.preprocessing import LabelEncoder, OneHotEncoder, MinMaxScaler
 
-train_ratio = 0.8
+train_ratio = 0.95
 
 sequence_depth = 6
 

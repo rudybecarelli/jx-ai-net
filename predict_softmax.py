@@ -28,11 +28,11 @@ file_root = config_parser.get(base_section, 'root')
 create_graph = config_parser.getboolean(base_section, 'create_graph')
 
 # Load dataset
-x = read_csv(os.path.join(file_root, 'x_test.csv'), header=None, index_col=False).values.astype('float32')
-y = read_csv(os.path.join(file_root, 'y_test.csv'), header=None, index_col=False).values.astype('float32')
+x = np.load(os.path.join(file_root, 'x_test.npy'))
+y = np.load(os.path.join(file_root, 'y_test.npy'))
 
 # Reshape input to be 3D [samples, timesteps, features]
-x = x.reshape((x.shape[0], 1, x.shape[1]))
+#x = x.reshape((x.shape[0], 1, x.shape[1]))
 
 # Save the model
 model = load_model(os.path.join(file_root, name + '.h5'))
@@ -56,7 +56,7 @@ def to_hardmax(x):
 y_hat = np.apply_along_axis( to_hardmax, axis=1, arr=y_hat )
 
 # Save y_hat
-np.savetxt(os.path.join(file_root, 'y_hat.csv'), y_hat, delimiter=",")
+np.save(os.path.join(file_root, 'y_hat'), y_hat)
 
 # Log to file
 if create_graph:

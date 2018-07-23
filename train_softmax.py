@@ -6,13 +6,14 @@ import argparse
 import ConfigParser
 import os
 import numpy as np
+from sklearn.model_selection import StratifiedKFold
 
 # Parameter defaults
 defaults = {
     'name': 'default_jxai',
     'root': '.',
     'nodes': '100',
-    'split': '0.8',
+    'k_fold_splits': '20',
     'epochs': '300',
     'batch': '20',
     'dropout': '0.2',
@@ -41,70 +42,93 @@ base_section = config_parser.sections()[0]
 name = config_parser.get(base_section, 'name')
 file_root = config_parser.get(base_section, 'root')
 lstm_nodes = config_parser.getint(base_section, 'nodes')
-train_ratio = config_parser.getfloat(base_section, 'split')
+k_fold_splits = config_parser.getint(base_section, 'k_fold_splits')
 epochs = config_parser.getint(base_section, 'epochs')
 batch_size = config_parser.getint(base_section, 'batch')
 dropout = config_parser.getfloat(base_section, 'dropout')
-crossvalidation = config_parser.getboolean(base_section, 'crossvalid')
 verbosity = config_parser.getint(base_section, 'verbosity')
 create_graph = config_parser.getboolean(base_section, 'create_graph')
 
 # Load dataset
-x_train = np.load(os.path.join(file_root, 'x_train.npy'))
-y_train = np.load(os.path.join(file_root, 'y_train.npy'))
-x_test = np.load(os.path.join(file_root, 'x_test.npy'))
-y_test = np.load(os.path.join(file_root, 'y_test.npy'))
+x = np.load(os.path.join(file_root, 'x_train.npy'))
+y = np.load(os.path.join(file_root, 'y_train.npy'))
 
-# Design network
-model = Sequential()
-model.add(LSTM(lstm_nodes, input_shape=(x_train.shape[1], x_train.shape[2])))
-model.add(Dense(lstm_nodes))
-model.add(Dropout(dropout))
-model.add(Dense(lstm_nodes))
-model.add(Dropout(dropout))
-model.add(Dense(y_train.shape[1], activation='softmax'))
-model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+# Random permutation
 
-# Fit network
-history = model.fit(x_train, y_train,
-                    epochs=epochs, batch_size=batch_size, validation_data=(x_test, y_test),
-                    verbose=verbosity, shuffle=False)
+permuted_indexes = np.random.permutation(x.shape[0])
 
-if loss is None:
+x = x[permuted_indexes]
 
-    loss = history.history["loss"]
+y = y[permuted_indexes]
 
-else:
+# Model path
 
-    loss = np.hstack(loss, history.history["loss"])
+model_path = os.path.join(file_root, name + '.h5')
 
-if val_loss is None:
+# Instantiate the cross validator
+skf = StratifiedKFold(n_splits=k_fold_splits)
 
-    val_loss = history.history["val_loss"]
+# Loop through the indices the split() method returns
+for index, (train_indices, val_indices) in enumerate(skf.split(x[:, 0, 0], y[:, 0])):
 
-else:
+    # Generate batches from indices
+    x_train, x_test = x[train_indices], x[val_indices]
+    y_train, y_test = y[train_indices], y[val_indices]
 
-    val_loss = np.hstack(val_loss, history.history["val_loss"])
+    # Design network
+    model = Sequential()
+    model.add(LSTM(lstm_nodes, input_shape=(x_train.shape[1], x_train.shape[2])))
+    model.add(Dense(lstm_nodes))
+    #model.add(Dropout(dropout))
+    model.add(Dense(lstm_nodes))
+    #model.add(Dropout(dropout))
+    model.add(Dense(y_train.shape[1], activation='softmax'))
+    model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
 
-if acc is None:
+    if os.path.isfile(model_path):
+        model.load_weights(model_path)
 
-    acc = history.history["acc"]
+    # Fit network
+    history = model.fit(x_train, y_train,
+                        epochs=epochs, batch_size=batch_size, validation_data=(x_test, y_test),
+                        verbose=verbosity, shuffle=True)
 
-else:
+    # Save the model
+    model.save(model_path)
 
-    acc = np.hstack(acc, history.history["acc"])
+    if loss is None:
 
-if val_acc is None:
+        loss = history.history["loss"]
 
-    val_acc = history.history["val_acc"]
+    else:
 
-else:
+        loss = np.hstack((loss, history.history["loss"]))
 
-    val_acc = np.hstack(val_acc, history.history["val_acc"])
+    if val_loss is None:
 
-# Save the model
-model.save(os.path.join(file_root, name + '.h5'))
+        val_loss = history.history["val_loss"]
 
+    else:
+
+        val_loss = np.hstack((val_loss, history.history["val_loss"]))
+
+    if acc is None:
+
+        acc = history.history["acc"]
+
+    else:
+
+        acc = np.hstack((acc, history.history["acc"]))
+
+    if val_acc is None:
+
+        val_acc = history.history["val_acc"]
+
+    else:
+
+        val_acc = np.hstack((val_acc, history.history["val_acc"]))
+
+# Plot the graph
 if create_graph:
     import matplotlib
 
