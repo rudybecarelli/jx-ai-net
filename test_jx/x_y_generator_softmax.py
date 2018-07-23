@@ -1,164 +1,88 @@
-import pandas as pd
-from sklearn.preprocessing import LabelEncoder, OneHotEncoder
-import numpy as np
 import math
 
+import numpy as np
+import pandas as pd
+from sklearn.preprocessing import LabelEncoder, OneHotEncoder, MinMaxScaler
 
 train_ratio = 0.8
 
-# Read the original file and create the onehot encoding
+# Read the original file
 
-x_tommy_denorm = pd.read_csv('x_tommy_denorm.csv', header=None)
+x_denorm = pd.read_csv('x_tommy_denorm.csv', header=None)
 
-keys = x_tommy_denorm.keys()
+# Drop invalid data
 
-x_local = None
+x_denorm = x_denorm.drop([2, 5, 10], axis=1)
 
-y_local = None
+# Label and onehot encoding
 
-plant_indexes = None
+x_scaled = x_denorm.copy()
 
-for key in keys:
+y_onehot = None
 
-    x_column = x_tommy_denorm[key]
+for key in x_denorm.keys():
 
-    if key == 0:
+    if key != 0:
 
-        plant_indexes = x_column
+        # Label encoding
 
-    else:
+        x_encoded_column = LabelEncoder().fit_transform(x_denorm[key]).reshape(-1, 1)
 
-        # Integer encode
+        x_scaled[key] = MinMaxScaler().fit_transform(x_encoded_column.astype(np.float64))
 
-        label_encoder = LabelEncoder()
+        if key == 4:
 
-        integer_encoded = label_encoder.fit_transform(x_column)
+            # Onehot encoding
 
-        # Binary encode
+            y_onehot = OneHotEncoder(sparse=False).fit_transform(x_encoded_column)
 
-        onehot_encoder = OneHotEncoder(sparse=False)
+# Extract the sequences
 
-        integer_encoded = integer_encoded.reshape(len(integer_encoded), 1)
-
-        onehot_encoded = onehot_encoder.fit_transform(integer_encoded)
-
-        if x_local is None:
-
-            x_local = onehot_encoded
-
-        else:
-
-            x_local = np.hstack((x_local, onehot_encoded))
-
-        if key == 5:
-
-            y_local = onehot_encoded
-
-# Create the cube dictionary
-
-cube_dict_x = {}
-
-cube_dict_y = {}
-
-for index, value in plant_indexes.iteritems():
-
-    x_row = np.transpose(np.expand_dims(x_local[index, :], axis=1))
-
-    y_row = np.transpose(np.expand_dims(y_local[index], axis=1))
-
-    if value in cube_dict_x:
-
-        time_series = cube_dict_x[value]
-
-        time_series = np.vstack((time_series, x_row))
-
-        cube_dict_x[value] = time_series
-
-        #
-
-        time_series = cube_dict_y[value]
-
-        time_series = np.vstack((time_series, y_row))
-
-        cube_dict_y[value] = time_series
-
-    else:
-
-        cube_dict_x[value] = x_row
-
-        cube_dict_y[value] = y_row
-
-# Look for the max size to pad to
-
-maxes = np.array([])
-
-for key, value in cube_dict_x.iteritems():
-
-    maxes = np.hstack((maxes, value.shape[0]))
-
-max_for_padding = np.amax(maxes)
-
-# Pad the cubes
-
-for key, value in cube_dict_x.iteritems():
-
-    cube_slice = cube_dict_x[key]
-
-    pad_size = int(max_for_padding - cube_slice.shape[0])
-
-    cube_slice = np.pad(cube_slice, ((0, pad_size), (0, 0)), 'constant')
-
-    cube_dict_x[key] = cube_slice
-
-    #
-
-    cube_slice = cube_dict_y[key]
-
-    cube_slice = np.pad(cube_slice, ((0, pad_size), (0, 0)), 'constant')
-
-    cube_dict_y[key] = cube_slice
-
-# Transform the cube_dicts to np cubes
+ids = set(x_scaled[0])
 
 x = None
 
 y = None
 
-for key, value in cube_dict_x.iteritems():
+for id in ids:
 
-    cube_slice = cube_dict_x[key]
+    sequence = x_scaled[x_scaled[0] == id]
 
-    cube_slice = np.expand_dims(cube_slice, axis=2)
+    if len(sequence.index) > 2:
 
-    cube_slice = np.transpose(cube_slice, (2, 0, 1))
+        sequence = sequence.drop([0], axis=1)
 
-    if x is None:
+        sequence_indexes = sequence.index.values
 
-        x = cube_slice
+        for row_index in np.arange(0, len(sequence_indexes) - 2):
 
-    else:
+            x_slice = np.zeros((1, 2, len(sequence.columns)))
 
-        x = np.append(x, cube_slice, axis=0)
+            x_slice[0, 0, :] = sequence.iloc[row_index].values
 
-    #
+            x_slice[0, 1, :] = sequence.iloc[row_index + 1].values
 
-    cube_slice = cube_dict_y[key]
+            if x is None:
 
-    cube_slice = np.expand_dims(cube_slice, axis=2)
+                x = x_slice
 
-    cube_slice = np.transpose(cube_slice, (2, 0, 1))
+            else:
 
-    if y is None:
+                x = np.vstack((x, x_slice))
 
-        y = cube_slice
+            y_slice = np.zeros((1, y_onehot.shape[1]))
 
-    else:
+            y_slice[0, :] = y_onehot[sequence_indexes[row_index + 2]]
 
-        y = np.append(y, cube_slice, axis=0)
+            if y is None:
 
-x = np.delete(x, -1, axis=1).astype(np.int32)
+                y = y_slice
 
-y = np.delete(y, 0, axis=1).astype(np.int32)
+            else:
+
+                y = np.vstack((y, y_slice))
+
+# Save the variables
 
 train_limit = int(math.floor(x.shape[0] * train_ratio))
 
@@ -166,9 +90,9 @@ x_train = x[:train_limit, :, :]
 
 x_test = x[train_limit:, :, :]
 
-y_train = y[:train_limit, :, :]
+y_train = y[:train_limit, :]
 
-y_test = y[train_limit:, :, :]
+y_test = y[train_limit:, :]
 
 np.save("x_train", x_train)
 

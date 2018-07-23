@@ -49,10 +49,6 @@ y_train = np.load(os.path.join(file_root, 'y_train.npy'))
 x_test = np.load(os.path.join(file_root, 'x_test.npy'))
 y_test = np.load(os.path.join(file_root, 'y_test.npy'))
 
-y_train = np.squeeze(y_train[:, 0, :])
-
-y_test = np.squeeze(y_test[:, 0, :])
-
 # Design network
 model = Sequential()
 model.add(LSTM(lstm_nodes, input_shape=(x_train.shape[1], x_train.shape[2])))
