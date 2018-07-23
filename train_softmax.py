@@ -21,6 +21,12 @@ defaults = {
     'create_graph': 'False'
 }
 
+# Arrays for the graph
+loss = None
+val_loss = None
+acc = None
+val_acc = None
+
 # Load configuration file
 parser = argparse.ArgumentParser(description='Train the jx-ai net')
 parser.add_argument('conf_file_path', help='The path to the conf file')
@@ -64,6 +70,38 @@ history = model.fit(x_train, y_train,
                     epochs=epochs, batch_size=batch_size, validation_data=(x_test, y_test),
                     verbose=verbosity, shuffle=False)
 
+if loss is None:
+
+    loss = history.history["loss"]
+
+else:
+
+    loss = np.hstack(loss, history.history["loss"])
+
+if val_loss is None:
+
+    val_loss = history.history["val_loss"]
+
+else:
+
+    val_loss = np.hstack(val_loss, history.history["val_loss"])
+
+if acc is None:
+
+    acc = history.history["acc"]
+
+else:
+
+    acc = np.hstack(acc, history.history["acc"])
+
+if val_acc is None:
+
+    val_acc = history.history["val_acc"]
+
+else:
+
+    val_acc = np.hstack(val_acc, history.history["val_acc"])
+
 # Save the model
 model.save(os.path.join(file_root, name + '.h5'))
 
@@ -72,11 +110,6 @@ if create_graph:
 
     matplotlib.use('Agg')
     from matplotlib import pyplot
-
-    loss = history.history["loss"]
-    val_loss = history.history["val_loss"]
-    acc = history.history["acc"]
-    val_acc = history.history["val_acc"]
 
     pyplot.figure()
     pyplot.plot(loss, label="loss")
