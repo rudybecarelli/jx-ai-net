@@ -1,5 +1,3 @@
-from math import floor
-from pandas import read_csv
 from keras.models import Sequential
 from keras.layers import Dense
 from keras.layers import Dropout
@@ -7,6 +5,7 @@ from keras.layers import LSTM
 import argparse
 import ConfigParser
 import os
+import numpy as np
 
 # Parameter defaults
 defaults = {
@@ -45,31 +44,24 @@ verbosity = config_parser.getint(base_section, 'verbosity')
 create_graph = config_parser.getboolean(base_section, 'create_graph')
 
 # Load dataset
-x = read_csv(os.path.join(file_root, 'x_train.csv'), header=None, index_col=False).values.astype('float32')
-y = read_csv(os.path.join(file_root, 'y_train.csv'), header=None, index_col=False).values.astype('float32')
-
-# Split into train and test sets
-train_length = int(floor(train_ratio * x.shape[0]))
-train_x, train_y = x[:train_length, :], y[:train_length, :]
-test_x, test_y = x[train_length:, :], y[train_length:, :]
-
-# Reshape input to be 3D [samples, timesteps, features]
-train_x = train_x.reshape((train_x.shape[0], 1, train_x.shape[1]))
-test_x = test_x.reshape((test_x.shape[0], 1, test_x.shape[1]))
+x_train = np.load(os.path.join(file_root, 'x_train.npy'))
+y_train = np.load(os.path.join(file_root, 'y_train.npy'))
+x_test = np.load(os.path.join(file_root, 'x_test.npy'))
+y_test = np.load(os.path.join(file_root, 'y_test.npy'))
 
 # Design network
 model = Sequential()
-model.add(LSTM(lstm_nodes, input_shape=(train_x.shape[1], train_x.shape[2])))
-#model.add(Dropout(dropout))
-#model.add(Dense(10 * lstm_nodes))
-#model.add(Dropout(dropout))
-model.add(Dense(train_y.shape[1], activation='softmax'))
+model.add(LSTM(lstm_nodes, input_shape=(x_train.shape[1], x_train.shape[2])))
+model.add(Dense(lstm_nodes))
+model.add(Dropout(dropout))
+model.add(Dense(lstm_nodes))
+model.add(Dropout(dropout))
+model.add(Dense(y_train.shape[2], activation='softmax'))
 model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
 
 # Fit network
-history = model.fit(train_x, train_y, epochs=epochs, batch_size=batch_size, validation_data=(test_x, test_y),
-                    verbose=verbosity,
-                    shuffle=False)
+history = model.fit(x_train, y_train, epochs=epochs, batch_size=batch_size, validation_data=(x_test, y_test),
+                    verbose=verbosity, shuffle=False)
 
 # Save the model
 model.save(os.path.join(file_root, name + '.h5'))
