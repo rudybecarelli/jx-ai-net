@@ -6,7 +6,7 @@ from sklearn.preprocessing import LabelEncoder, OneHotEncoder, MinMaxScaler
 
 train_ratio = 0.95
 
-sequence_depth = 6
+sequence_depth = 3
 
 # Read the original file
 
@@ -42,9 +42,9 @@ for key in x_denorm.keys():
 
 ids = set(x_scaled[0])
 
-x = None
+x = np.empty((0, sequence_depth, len(x_scaled.columns) - 1))
 
-y = None
+y = np.empty((0, y_onehot.shape[1]))
 
 for id in ids:
 
@@ -64,25 +64,13 @@ for id in ids:
 
                 x_slice[0, i, :] = sequence.iloc[row_index + i].values
 
-            if x is None:
-
-                x = x_slice
-
-            else:
-
-                x = np.vstack((x, x_slice))
+            x = np.vstack((x, x_slice))
 
             y_slice = np.zeros((1, y_onehot.shape[1]))
 
             y_slice[0, :] = y_onehot[sequence_indexes[row_index + sequence_depth]]
 
-            if y is None:
-
-                y = y_slice
-
-            else:
-
-                y = np.vstack((y, y_slice))
+            y = np.vstack((y, y_slice))
 
 # Save the variables
 
