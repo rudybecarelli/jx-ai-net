@@ -76,7 +76,7 @@ x = np.load(os.path.join(file_root, 'x_train.npy'))
 
 y = np.load(os.path.join(file_root, 'y_train.npy'))
 
-# Random permutation
+# Random dataset permutation
 
 permuted_indexes = np.random.permutation(x.shape[0])
 
@@ -94,19 +94,13 @@ model = Sequential()
 
 model.add(LSTM(lstm_nodes, input_shape=(x.shape[1], x.shape[2])))
 
-model.add(Dense(lstm_nodes))
-
-#model.add(Dropout(dropout))
-
-model.add(Dense(lstm_nodes))
-
+model.add(Dense(lstm_nodes, activation='relu'))
+model.add(Dense(lstm_nodes, activation='relu'))
 #model.add(Dropout(dropout))
 
 model.add(Dense(y.shape[1], activation='softmax'))
 
-adam = Adam(lr=0.001)
-
-model.compile(loss='categorical_crossentropy', optimizer=adam, metrics=['accuracy'])
+model.compile(loss='categorical_crossentropy', optimizer='adadelta', metrics=['accuracy'])
 
 # Load the model weights
 
@@ -144,37 +138,39 @@ for index, (train_indices, val_indices) in enumerate(skf.split(x[:, 0, 0], y[:, 
 
     val_acc = np.hstack((val_acc, history.history["val_acc"]))
 
-# Save the model
+    # Plot the graph
 
-model.save(model_path)
+    if create_graph:
 
-# Plot the graph
+        import matplotlib
 
-if create_graph:
+        matplotlib.use('Agg')
 
-    import matplotlib
+        from matplotlib import pyplot
 
-    matplotlib.use('Agg')
+        #pyplot.figure()
 
-    from matplotlib import pyplot
+        pyplot.plot(loss, label="loss")
 
-    pyplot.figure()
+        pyplot.plot(val_loss, label="val_loss")
 
-    pyplot.plot(loss, label="loss")
+        pyplot.plot(acc, label="acc")
 
-    pyplot.plot(val_loss, label="val_loss")
+        pyplot.plot(val_acc, label="val_acc")
 
-    pyplot.plot(acc, label="acc")
+        pyplot.legend()
 
-    pyplot.plot(val_acc, label="val_acc")
+        text_log = 'loss: %.4f  val_loss: %.4f  acc: %.4f  val_acc: %.4f' % \
+                   (loss[-1], val_loss[-1], acc[-1], val_acc[-1])
 
-    pyplot.legend()
+        pyplot.xlabel(text_log)
 
-    text_log = 'loss: %.4f  val_loss: %.4f  acc: %.4f  val_acc: %.4f' % \
-               (loss[-1], val_loss[-1], acc[-1], val_acc[-1])
+        #pyplot.ylim((0, 1))
 
-    pyplot.xlabel(text_log)
+        pyplot.savefig(os.path.join(file_root, name + '_graphs.png'))
 
-    #pyplot.ylim((0, 1))
+        pyplot.clf()
 
-    pyplot.savefig(os.path.join(file_root, name + '_graphs.png'))
+    # Save the model
+
+    model.save(model_path)

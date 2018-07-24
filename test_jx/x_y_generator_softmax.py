@@ -6,7 +6,9 @@ from sklearn.preprocessing import LabelEncoder, OneHotEncoder, MinMaxScaler
 
 train_ratio = 0.95
 
-sequence_depth = 3
+sequence_depth = 6
+
+y_feature = 3
 
 # Read the original file
 
@@ -32,7 +34,7 @@ for key in x_denorm.keys():
 
         x_scaled[key] = MinMaxScaler().fit_transform(x_encoded_column.astype(np.float64))
 
-        if key == 3:
+        if key == y_feature:
 
             # Onehot encoding
 
