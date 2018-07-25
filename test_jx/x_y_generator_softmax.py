@@ -6,7 +6,7 @@ from sklearn.preprocessing import LabelEncoder, OneHotEncoder, MinMaxScaler
 
 train_ratio = 0.95
 
-sequence_depth = 6
+sequence_depth = 15
 
 y_feature = 3
 
@@ -16,7 +16,7 @@ x_denorm = pd.read_csv('x_tommy_denorm.csv', header=None)
 
 # Drop invalid data
 
-x_denorm = x_denorm.drop([2, 5, 10], axis=1)
+# x_denorm = x_denorm.drop([2, 5, 10], axis=1)
 
 # Label and onehot encoding
 

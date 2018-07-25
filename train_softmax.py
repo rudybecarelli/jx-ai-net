@@ -160,8 +160,8 @@ for index, (train_indices, val_indices) in enumerate(skf.split(x[:, 0, 0], y[:, 
 
         pyplot.legend()
 
-        text_log = 'loss: %.4f  val_loss: %.4f  acc: %.4f  val_acc: %.4f' % \
-                   (loss[-1], val_loss[-1], acc[-1], val_acc[-1])
+        text_log = 'loss: %.4f  acc: %.4f  val_loss: %.4f  val_acc: %.4f' % \
+                   (loss[-1], acc[-1], val_loss[-1], val_acc[-1])
 
         pyplot.xlabel(text_log)
 
